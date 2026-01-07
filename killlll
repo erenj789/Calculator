@@ -1,0 +1,108 @@
+--[[ 
+	Teleport Everyone To Me + Kill Loop
+	Server Side Only
+	Loadstring Compatible
+	Beginner Friendly
+
+	What this script does:
+	1. Finds the owner
+	2. Teleports all other players to the owner
+	3. Repeatedly kills all non-owners
+]]
+
+--------------------------------------------------
+-- SERVICES
+--------------------------------------------------
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+--------------------------------------------------
+-- SETTINGS (CHANGE THIS)
+--------------------------------------------------
+
+-- 🔴 PUT YOUR USER ID HERE
+local OWNER_USER_ID = 4445411787
+
+-- How often players are killed (seconds)
+local KILL_INTERVAL = 2
+
+--------------------------------------------------
+-- SAFETY CHECK
+--------------------------------------------------
+
+-- Make sure this is running on the server
+if not RunService:IsServer() then
+	warn("This script must be run on the server.")
+	return
+end
+
+--------------------------------------------------
+-- HELPER FUNCTIONS
+--------------------------------------------------
+
+-- Get the owner's character
+local function getOwnerCharacter()
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player.UserId == OWNER_USER_ID then
+			return player.Character
+		end
+	end
+	return nil
+end
+
+-- Teleport all players to the owner
+local function teleportPlayersToOwner()
+	local ownerCharacter = getOwnerCharacter()
+	if not ownerCharacter then return end
+
+	local ownerRoot = ownerCharacter:FindFirstChild("HumanoidRootPart")
+	if not ownerRoot then return end
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player.UserId ~= OWNER_USER_ID and player.Character then
+			local root = player.Character:FindFirstChild("HumanoidRootPart")
+			if root then
+				root.CFrame = ownerRoot.CFrame * CFrame.new(0, 0, -3)
+			end
+		end
+	end
+end
+
+-- Kill all non-owner players
+local function killNonOwners()
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player.UserId ~= OWNER_USER_ID and player.Character then
+			local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoid.Health = 0
+			end
+		end
+	end
+end
+
+--------------------------------------------------
+-- MAIN LOOP
+--------------------------------------------------
+
+-- Repeat forever
+task.spawn(function()
+	while true do
+		teleportPlayersToOwner()
+		killNonOwners()
+		task.wait(KILL_INTERVAL)
+	end
+end)
+
+--------------------------------------------------
+-- HANDLE NEW PLAYERS
+--------------------------------------------------
+
+-- When someone joins, teleport + kill them too
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Connect(function()
+		task.wait(1)
+		teleportPlayersToOwner()
+		killNonOwners()
+	end)
+end)
