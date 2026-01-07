@@ -1,0 +1,77 @@
+--[[ 
+	Kick Everyone Except Owner Script
+	Beginner Friendly
+	Server Side Only
+	Loadstring Compatible
+
+	What this script does:
+	1. Finds all players in the server
+	2. Checks each player's UserId
+	3. Kicks everyone who is NOT the owner
+	4. Leaves the owner in the server
+]]
+
+--------------------------------------------------
+-- SERVICES
+--------------------------------------------------
+
+-- Players service allows us to see players in the server
+local Players = game:GetService("Players")
+
+--------------------------------------------------
+-- SETTINGS (YOU MUST CHANGE THIS)
+--------------------------------------------------
+
+-- 🔴 PUT YOUR USER ID HERE
+local OWNER_USER_ID = 4445411787
+
+-- Message shown to kicked players
+local KICK_MESSAGE = "This server has been locked by the owner."
+
+--------------------------------------------------
+-- SAFETY CHECK
+--------------------------------------------------
+
+-- Make sure this is running on the server
+if not game:GetService("RunService"):IsServer() then
+	warn("This script must be run on the server.")
+	return
+end
+
+--------------------------------------------------
+-- MAIN FUNCTION
+--------------------------------------------------
+
+-- Function that kicks all non-owners
+local function kickNonOwners()
+	for _, player in ipairs(Players:GetPlayers()) do
+		
+		-- If the player is NOT the owner
+		if player.UserId ~= OWNER_USER_ID then
+			
+			-- Kick them from the server
+			player:Kick(KICK_MESSAGE)
+		
+		end
+	end
+end
+
+--------------------------------------------------
+-- EXECUTION
+--------------------------------------------------
+
+-- Run the kick function
+kickNonOwners()
+
+--------------------------------------------------
+-- OPTIONAL: PROTECT AGAINST NEW JOINERS
+--------------------------------------------------
+
+-- If someone joins after the script runs,
+-- they will also be kicked (unless they are you)
+
+Players.PlayerAdded:Connect(function(player)
+	if player.UserId ~= OWNER_USER_ID then
+		player:Kick(KICK_MESSAGE)
+	end
+end)
