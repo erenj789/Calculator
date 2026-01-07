@@ -1,0 +1,99 @@
+--[[ 
+	ROBLOX LONG SHUTDOWN SCRIPT
+	Beginner Friendly
+	Loadstring Compatible
+	Server Side Only
+
+	What this script does:
+	1. Finds all players
+	2. Sends warning messages
+	3. Counts down slowly
+	4. Kicks everyone
+	5. Shuts down the server
+]]
+
+--------------------------------------------------
+-- SERVICES
+--------------------------------------------------
+
+-- Players service lets us see and control players
+local Players = game:GetService("Players")
+
+--------------------------------------------------
+-- SETTINGS (YOU CAN CHANGE THESE)
+--------------------------------------------------
+
+local SETTINGS = {
+
+	-- How long before shutdown (seconds)
+	CountdownTime = 15,
+
+	-- Message shown to players
+	ShutdownMessage = "The server is shutting down for an update.",
+
+	-- Extra message
+	ExtraMessage = "Please rejoin in a few minutes.",
+
+	-- Time between warnings
+	WarningInterval = 1,
+
+}
+
+--------------------------------------------------
+-- FUNCTIONS
+--------------------------------------------------
+
+-- This function sends a message and kicks all players
+local function kickAllPlayers(message)
+	for _, player in ipairs(Players:GetPlayers()) do
+		player:Kick(message)
+	end
+end
+
+-- This function sends countdown warnings
+local function startCountdown()
+	for timeLeft = SETTINGS.CountdownTime, 1, -1 do
+
+		for _, player in ipairs(Players:GetPlayers()) do
+			player:Kick(
+				"⚠ SERVER SHUTDOWN ⚠\n\n" ..
+				"Shutting down in: " .. timeLeft .. " seconds\n\n" ..
+				SETTINGS.ShutdownMessage .. "\n" ..
+				SETTINGS.ExtraMessage
+			)
+		end
+
+		task.wait(SETTINGS.WarningInterval)
+	end
+end
+
+--------------------------------------------------
+-- MAIN SCRIPT
+--------------------------------------------------
+
+-- Check if there are players
+if #Players:GetPlayers() == 0 then
+	-- No players, shutdown immediately
+	game:Shutdown()
+	return
+end
+
+-- Run countdown if time is greater than 0
+if SETTINGS.CountdownTime > 0 then
+	startCountdown()
+else
+	-- Instant kick
+	kickAllPlayers(
+		SETTINGS.ShutdownMessage .. "\n" .. SETTINGS.ExtraMessage
+	)
+end
+
+--------------------------------------------------
+-- FINAL SHUTDOWN
+--------------------------------------------------
+
+-- Small wait so Roblox finishes kicking players
+task.wait(2)
+
+-- Shutdown the server
+game:Shutdown()
