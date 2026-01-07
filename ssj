@@ -1,0 +1,191 @@
+-- MULTI FORM TRANSFORMATION SCRIPT
+-- Base -> SSJ -> SSJ2 -> SSB
+-- LocalScript
+
+--------------------------------------------------
+-- SERVICES
+--------------------------------------------------
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+--------------------------------------------------
+-- PLAYER SETUP
+--------------------------------------------------
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local root = character:WaitForChild("HumanoidRootPart")
+local camera = workspace.CurrentCamera
+
+--------------------------------------------------
+-- CONFIG
+--------------------------------------------------
+
+local TRANSFORM_KEY = Enum.KeyCode.F
+
+local FORMS = {
+	[0] = {
+		Name = "Base",
+		Color = Color3.fromRGB(163,162,165),
+		Hair = "Black",
+		Aura = nil,
+		Speed = 1,
+		Jump = 1,
+		Animation = nil,
+	},
+	[1] = {
+		Name = "Super Saiyan",
+		Color = Color3.fromRGB(255,230,100),
+		Hair = "Bright yellow",
+		Aura = Color3.fromRGB(255, 220, 120),
+		Speed = 1.5,
+		Jump = 1.5,
+		Animation = "rbxassetid://0000000001",
+	},
+	[2] = {
+		Name = "Super Saiyan 2",
+		Color = Color3.fromRGB(255,255,170),
+		Hair = "New Yeller",
+		Aura = Color3.fromRGB(255, 255, 170),
+		Speed = 1.8,
+		Jump = 1.8,
+		Animation = "rbxassetid://0000000002",
+	},
+	[3] = {
+		Name = "Super Saiyan Blue",
+		Color = Color3.fromRGB(180,220,255),
+		Hair = "Electric blue",
+		Aura = Color3.fromRGB(120, 180, 255),
+		Speed = 2.2,
+		Jump = 2.2,
+		Animation = "rbxassetid://0000000003",
+	},
+}
+
+local TRANSFORM_SOUND = "rbxassetid://0000000004"
+local TRANSFORM_TIME = 2
+
+--------------------------------------------------
+-- STATE
+--------------------------------------------------
+
+local currentForm = 0
+local baseSpeed = humanoid.WalkSpeed
+local baseJump = humanoid.JumpPower
+local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
+
+--------------------------------------------------
+-- EFFECTS
+--------------------------------------------------
+
+local aura = Instance.new("ParticleEmitter")
+aura.Rate = 200
+aura.Speed = NumberRange.new(4,8)
+aura.Lifetime = NumberRange.new(0.6,1)
+aura.Texture = "rbxassetid://241594314"
+aura.Enabled = false
+aura.Parent = root
+
+local sound = Instance.new("Sound")
+sound.SoundId = TRANSFORM_SOUND
+sound.Volume = 1
+sound.Parent = root
+
+--------------------------------------------------
+-- HELPERS
+--------------------------------------------------
+
+local function setBodyColor(color)
+	for _, v in ipairs(character:GetChildren()) do
+		if v:IsA("BasePart") then
+			TweenService:Create(
+				v,
+				TweenInfo.new(TRANSFORM_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+				{ Color = color }
+			):Play()
+		end
+	end
+end
+
+local function setHairColor(color)
+	for _, v in ipairs(character:GetChildren()) do
+		if v:IsA("Accessory") and v:FindFirstChild("Handle") then
+			v.Handle.BrickColor = BrickColor.new(color)
+		end
+	end
+end
+
+local function playAnimation(id)
+	if not id then return end
+	local anim = Instance.new("Animation")
+	anim.AnimationId = id
+	local track = animator:LoadAnimation(anim)
+	track:Play()
+end
+
+local function screenShake(duration, strength)
+	local start = tick()
+	RunService.RenderStepped:Connect(function()
+		if tick() - start > duration then return end
+		camera.CFrame = camera.CFrame * CFrame.new(
+			math.random(-strength, strength) / 50,
+			math.random(-strength, strength) / 50,
+			0
+		)
+	end)
+end
+
+--------------------------------------------------
+-- TRANSFORM
+--------------------------------------------------
+
+local function applyForm(formId)
+	local form = FORMS[formId]
+
+	sound:Play()
+	screenShake(0.6, 2)
+	playAnimation(form.Animation)
+
+	setBodyColor(form.Color)
+	setHairColor(form.Hair)
+
+	if form.Aura then
+		aura.Color = ColorSequence.new(form.Aura)
+		aura.Enabled = true
+	else
+		aura.Enabled = false
+	end
+
+	humanoid.WalkSpeed = baseSpeed * form.Speed
+	humanoid.JumpPower = baseJump * form.Jump
+end
+
+--------------------------------------------------
+-- INPUT
+--------------------------------------------------
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if input.KeyCode == TRANSFORM_KEY then
+		currentForm += 1
+		if currentForm > 3 then
+			currentForm = 0
+		end
+		applyForm(currentForm)
+	end
+end)
+
+--------------------------------------------------
+-- RESPAWN FIX
+--------------------------------------------------
+
+player.CharacterAdded:Connect(function(char)
+	character = char
+	humanoid = char:WaitForChild("Humanoid")
+	root = char:WaitForChild("HumanoidRootPart")
+	animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
+end)
